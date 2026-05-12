@@ -9,6 +9,8 @@ import warnings
 warnings.filterwarnings('ignore')
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 FEATURES = [
     "latitude", "longitude",                  # location
@@ -19,6 +21,18 @@ FEATURES = [
     "host_is_superhost",                      # host quality
     "review_scores_rating", "review_scores_location",
     "instant_bookable"
+]
+
+BEST_FEATURES = [
+    "room_type",               # most important by far
+    "property_type",           # second most important
+    "city",                    # strong importance
+    "accommodates",            # high correlation with price (drop bedrooms)
+    "review_scores_rating",    # mid importance
+    "minimum_nights",          # mid importance
+    "latitude",                # mid importance
+    # DROPPED: neighbourhood, longitude, district, host_is_superhost,
+    #          instant_bookable, review_scores_location, bedrooms
 ]
 TARGET = "price_log"
 
@@ -82,6 +96,39 @@ def train(dfs):
     LGBMRegressor(n_estimators=100, random_state=42, verbose=-1),
     X_train, X_test, y_train, y_test
     )
+
+
+    # Get feature importance
+    lgbm_model = LGBMRegressor(n_estimators=100, random_state=42, verbose=-1)
+    lgbm_model.fit(X_train, y_train)  # make sure it's fitted
+
+    importance = pd.DataFrame({
+        'feature': X.columns,
+        'importance': lgbm_model.feature_importances_
+    }).sort_values('importance', ascending=True)
+
+    # Plot
+    plt.figure(figsize=(8, 6))
+    plt.barh(importance['feature'], importance['importance'], color='steelblue')
+    plt.title('LightGBM Feature Importance')
+    plt.xlabel('Importance')
+    plt.tight_layout()
+    plt.show()
+
+
+    numeric_features = [
+    "latitude", "longitude", "accommodates", "bedrooms",
+    "minimum_nights", "review_scores_rating", "review_scores_location",
+    "host_is_superhost", "instant_bookable", "price_log"
+]
+
+    corr = df[numeric_features].corr()
+
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(corr, annot=True, fmt=".2f", cmap="coolwarm", center=0)
+    plt.title("Correlation Matrix")
+    plt.tight_layout()
+    plt.show()
 
     return lr_results, rf_results, lgbm_results
 
