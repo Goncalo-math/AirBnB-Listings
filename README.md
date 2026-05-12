@@ -70,7 +70,7 @@ All models are evaluated on:
 
 **1. Clone the repository**
 ```bash
-git clone https://github.com/your-username/airbnb-price-predictor.git
+git clone https://github.com/Goncalo-math/AirBnB-Listings.git
 cd airbnb-price-predictor
 ```
 
