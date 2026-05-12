@@ -103,6 +103,14 @@ jupyter notebook notebooks/airbnb_price_analysis.ipynb
 | Random Forest | ~0.30 | ~0.43 | ~0.62 |
 | LightGBM | ~0.30 | ~0.42 | ~0.63 |
 
+Then we proceed to analyse the features with the best correlation, and re-fot the models.
+
+| Model | MAE | RMSE | R² |
+|---|---|---|---|
+|Best Linear Regression | ~0.49 | ~0.65 | ~0.71 |
+|Best Random Forest | ~0.39 | ~0.53 | ~0.80 |
+|Best LightGBM | ~0.37 | ~0.50 | ~0.82 |
+
 > Results are on log-transformed prices. LightGBM outperforms the other models.
 
 ---
