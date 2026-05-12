@@ -5,6 +5,8 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor
 from lightgbm import LGBMRegressor
+import warnings
+warnings.filterwarnings('ignore')
 import pandas as pd
 import numpy as np
 
@@ -31,8 +33,10 @@ def train(dfs):
     print(f"Removing {mask.sum()} non-numeric price rows")     # log how many rows are removed
     df = df[~mask].copy()                                      # keep only rows with numeric prices
 
-    # df["price"] = df["price"].astype(float)
-    # df = df[df["price"] > 0]
+    
+    print(f'Zero price rows: {(df["price"] == 0).sum()}')      # log how many zero price rows are present
+    df = df[df['price'] > 0]                                   # remove zero price rows                  
+
     df[TARGET] = np.log1p(df["price"])
 
     # Encode bool columns
@@ -58,65 +62,45 @@ def train(dfs):
     )
 
     # Train Linear Regression
-    lr_model = LinearRegression()
-    lr_model.fit(X_train, y_train)
+    lr_results = evaluate_model(
+    'Linear Regression',
+    LinearRegression(),
+    X_train, X_test, y_train, y_test
+    )
+    print(f"CV R² Mean: {lr_results['CV_R2']:.4f} ± {lr_results['R2']:.4f}")
 
-    y_pred = lr_model.predict(X_test)
+    # Train with Random Forest (added complexity, may improve performance but slower)
+    rf_results = evaluate_model(
+    'Random Forest',
+    RandomForestRegressor(n_estimators=100, random_state=42),
+    X_train, X_test, y_train, y_test
+    )
 
-    # Regression metrics
+    # Train for LightGBM (added complexity, may improve performance but slower)
+    lgbm_results = evaluate_model(
+    'LightGBM',
+    LGBMRegressor(n_estimators=100, random_state=42, verbose=-1),
+    X_train, X_test, y_train, y_test
+    )
+
+    return lr_results, rf_results, lgbm_results
+
+def evaluate_model(name, model, X_train, X_test, y_train, y_test):
+    model.fit(X_train, y_train)
+    y_pred = model.predict(X_test)
+
     mae  = mean_absolute_error(y_test, y_pred)
     rmse = np.sqrt(mean_squared_error(y_test, y_pred))
     r2   = r2_score(y_test, y_pred)
 
-    print("\nTest Set Performance for Linear Regression:")
-    print(f"MAE:  {mae:.4f}")
-    print(f"RMSE: {rmse:.4f}")
-    print(f"R²:   {r2:.4f}")
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        cv_scores = cross_val_score(model, X_train, y_train, cv=10, scoring='r2')
 
-    # Cross-validation
-    lr_scores = cross_val_score(lr_model, X_train, y_train, cv=10, scoring="r2")
-    print(f"CV R² Mean: {lr_scores.mean():.4f} ± {lr_scores.std():.4f}")
+    print(f'\n--- {name} ---')
+    print(f'MAE:            {mae:.4f}')
+    print(f'RMSE:           {rmse:.4f}')
+    print(f'R²:             {r2:.4f}')
+    print(f'CV R² (10-fold): {cv_scores.mean():.4f} ± {cv_scores.std():.4f}')
 
-    # Train with Random Forest (added complexity, may improve performance but slower)
-    rf_model = RandomForestRegressor(n_estimators=100, random_state=42)
-    rf_model.fit(X_train, y_train)
-
-    y_pred_rf = rf_model.predict(X_test)
-
-    # Regression metrics for Random Forest
-    mae_rf  = mean_absolute_error(y_test, y_pred_rf)
-    rmse_rf = np.sqrt(mean_squared_error(y_test, y_pred_rf))
-    r2_rf   = r2_score(y_test, y_pred_rf)
-
-    print("\nTest Set Performance for Random Forest:")
-    print(f"MAE:  {mae_rf:.4f}")
-    print(f"RMSE: {rmse_rf:.4f}")
-    print(f"R²:   {r2_rf:.4f}")
-
-    # Cross-validation
-    rf_scores = cross_val_score(rf_model, X_train, y_train, cv=10, scoring="r2")
-    print(f"CV R² Mean: {rf_scores.mean():.4f} ± {rf_scores.std():.4f}")
-
-    # Train for LightGBM (added complexity, may improve performance but slower)
-    lgbm_model = LGBMRegressor(n_estimators=100, random_state=42, verbose=-1)
-    lgbm_model.fit(X_train, y_train)
-
-    y_pred_lgbm = lgbm_model.predict(X_test)
-
-    # Regression metrics for LightGBM
-    mae_lgbm  = mean_absolute_error(y_test, y_pred_lgbm)
-    rmse_lgbm = np.sqrt(mean_squared_error(y_test, y_pred_lgbm))
-    r2_lgbm   = r2_score(y_test, y_pred_lgbm)
-
-    print("\nTest Set Performance for LightGBM:")
-    print(f"MAE:  {mae_lgbm:.4f}")
-    print(f"RMSE: {rmse_lgbm:.4f}")
-    print(f"R²:   {r2_lgbm:.4f}")
-
-    # Instead of X_train (numpy array), keep it as DataFrame
-    X_train_df = pd.DataFrame(X_train, columns=X.columns)
-
-    lgbm_scores = cross_val_score(lgbm_model, X_train_df, y_train, cv=10, scoring="r2")
-    print(f"CV R² Mean: {lgbm_scores.mean():.4f} ± {lgbm_scores.std():.4f}")
-
-    return lr_model
+    return {'name': name, 'MAE': mae, 'RMSE': rmse, 'R2': r2, 'CV_R2': cv_scores.mean()}
