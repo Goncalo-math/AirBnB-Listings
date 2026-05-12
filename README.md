@@ -120,4 +120,4 @@ jupyter notebook notebooks/airbnb_price_analysis.ipynb
 
 ## 📄 Dataset
 
-The dataset is based on publicly available Airbnb listing data. It contains property listings with pricing, host information, location, and review scores.
+The dataset is based on publicly available [Airbnb listing data](https://www.kaggle.com/datasets/ulrikthygepedersen/airbnb-listings). It contains property listings with pricing, host information, location, and review scores.
