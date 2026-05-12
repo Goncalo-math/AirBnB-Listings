@@ -99,8 +99,8 @@ jupyter notebook notebooks/airbnb_price_analysis.ipynb
 
 | Model | MAE | RMSE | R² |
 |---|---|---|---|
-| Linear Regression | ~0.45 | ~0.60 | ~0.45 |
-| Random Forest | ~0.35 | ~0.48 | ~0.58 |
+| Linear Regression | ~0.35 | ~0.48 | ~0.52 |
+| Random Forest | ~0.30 | ~0.43 | ~0.62 |
 | LightGBM | ~0.30 | ~0.42 | ~0.63 |
 
 > Results are on log-transformed prices. LightGBM outperforms the other models.
