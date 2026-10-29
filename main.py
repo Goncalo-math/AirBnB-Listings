@@ -1,6 +1,6 @@
 from src.load_data import load_all
 from src.model import train
-from best_model import best_train
+from src.best_model import best_train
 import pandas as pd
 import matplotlib.pyplot as plt
 
